@@ -6,6 +6,13 @@ CakePHP2のAmazonWebServices S3のファイルを操作をサポートするデ�
 初期設定
 ------------
 
+プラグインダウンロード（submoduleでも良いけど）
+
+	$cd app/Plugin
+	$git clone git@github.com:zaru/Cakephp2_AWS_S3_DataSource.git AmazonWebServices
+
+もしくはGitHubからZIPダウンロードで app/Plugin に AmazonWebServices という名前で配置。
+
 app/Config/bootstrap.phpに
 
 	CakePlugin::load('AmazonWebServices');
