@@ -3,8 +3,14 @@
  * AmazonWebServices S3 へのファイル操作データソース
  *
  */
-App::import('Vendor', 'AmazonWebServices.aws_sdk/sdk.class');
+use Aws\S3\Enum\CannedAcl;
+use Aws\S3\S3Client;
+use Aws\S3\Exception\S3Exception;
+use Guzzle\Http\EntityBody;
 
+/**
+ * Class S3
+ */
 class S3 extends DataSource {
 	public $description = 'AmazonWebServices S3 File Controller';
 	public $S3 = '';
@@ -12,7 +18,7 @@ class S3 extends DataSource {
 	
 	public function __construct($config = array(), $autoConnect = true){
 		parent::__construct($config);
-		$this->S3 = new AmazonS3($config);
+		$this->S3 = S3Client::factory($config);
 		$this->bucketName = $config['bucket_name'];
 	}
 	
@@ -43,22 +49,24 @@ class S3 extends DataSource {
 		
 		// 行頭にスラッシュが入っていた場合は消す
 		$dstFilePath = preg_replace("/^\/(.+)$/", "$1", $dstFilePath);
-		
-		$res = $this->S3->create_object(
-			$this->bucketName,
-			$dstFilePath,
-			array(
-				'fileUpload' => $srcFilePath,
-				'acl'=>AmazonS3::ACL_PUBLIC
-			)
-		);
-		
-		if ($res->status == '200') {
-			return $res->header['_info']['url'];
+
+		try {
+			$result = $this->S3->putObject(array(
+					'Bucket' => $this->bucketName,
+					'Key' => $dstFilePath,
+					'Body' => EntityBody::factory(fopen($srcFilePath, 'r')),
+					'ACL' => CannedAcl::PUBLIC_READ,
+				));
+		} catch (S3Exception $exc) {
+//			echo $exc->getMessage();
+			return false;
 		}
-		
+
+		if (isset($result['ObjectURL'])) {
+			return $result['ObjectURL'];
+		}
+
 		return false;
-		
 	}
 
 /**
@@ -71,19 +79,17 @@ class S3 extends DataSource {
 		
 		// 行頭にスラッシュが入っていた場合は消す
 		$filePath = preg_replace("/^\/(.+)$/", "$1", $filePath);
-		
-		$res = $this->S3->delete_object(
-			$this->bucketName,
-			$filePath
-		);
-		
-		// 削除しようが存在しなかろうが、204が返ってくるのでとりあえずこのままで…
-		if ($res->status == '204') {
-			return true;
+
+		try {
+			 $this->S3->deleteObject(array(
+					'Bucket' => $this->bucketName,
+					'Key' => $filePath,
+				));
+		} catch (S3Exception $exc) {
+			return false;
 		}
-		
-		return false;
-		
+
+		return true;
 	}
 
 /**
@@ -98,28 +104,21 @@ class S3 extends DataSource {
 		// 行頭にスラッシュが入っていた場合は消す
 		$srcFilePath = preg_replace("/^\/(.+)$/", "$1", $srcFilePath);
 		$dstFilePath = preg_replace("/^\/(.+)$/", "$1", $dstFilePath);
-		
-		$res = $this->S3->copy_object(
-			array('bucket' => $this->bucketName, 'filename' => $srcFilePath),
-			array('bucket' => $this->bucketName, 'filename' => $dstFilePath)
-		);
-		
-		if ($res->status != '200') {
+
+		try {
+			 $this->S3->copyObject(array(
+					'Bucket' => $this->bucketName,
+					'CopySource' => $this->bucketName . '/' . $srcFilePath,
+					'Key' => $dstFilePath,
+					'ACL' => CannedAcl::PUBLIC_READ,
+				));
+		} catch (Exception $e) {
 			return false;
 		}
+
+		$this->deleteFile($srcFilePath);
 		
-		$s3Url = $res->header['_info']['url'];
-		
-		$res = $this->S3->delete_object(
-			$this->bucketName,
-			$srcFilePath
-		);
-		
-		if ($res->status == '204') {
-			return $s3Url;
-		}
-		
-		return false;
+		return true;
 		
 	}
 
@@ -135,17 +134,19 @@ class S3 extends DataSource {
 		// 行頭にスラッシュが入っていた場合は消す
 		$srcFilePath = preg_replace("/^\/(.+)$/", "$1", $srcFilePath);
 		$dstFilePath = preg_replace("/^\/(.+)$/", "$1", $dstFilePath);
-		
-		$res = $this->S3->copy_object(
-			array('bucket' => $this->bucketName, 'filename' => $srcFilePath),
-			array('bucket' => $this->bucketName, 'filename' => $dstFilePath)
-		);
-		
-		if ($res->status != '200') {
+
+		try {
+			$this->S3->copyObject(array(
+					'Bucket' => $this->bucketName,
+					'CopySource' => $this->bucketName . '/' . $srcFilePath,
+					'Key' => $dstFilePath,
+					'ACL' => CannedAcl::PUBLIC_READ,
+				));
+		} catch (Exception $e) {
 			return false;
 		}
 		
-		return $res->header['_info']['url'];
+		return true;
 		
 	}
 	
