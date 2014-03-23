@@ -58,7 +58,7 @@ class S3 extends DataSource {
 					'ACL' => CannedAcl::PUBLIC_READ,
 				));
 		} catch (S3Exception $exc) {
-//			echo $exc->getMessage();
+			CakeLog::error('AWS S3 [putObject]: ' . $exc->getMessage());
 			return false;
 		}
 
@@ -86,6 +86,7 @@ class S3 extends DataSource {
 					'Key' => $filePath,
 				));
 		} catch (S3Exception $exc) {
+			CakeLog::error('AWS S3 [deleteObject]: ' . $exc->getMessage());
 			return false;
 		}
 
@@ -113,6 +114,7 @@ class S3 extends DataSource {
 					'ACL' => CannedAcl::PUBLIC_READ,
 				));
 		} catch (Exception $e) {
+			CakeLog::error('AWS S3 [copyObject]: ' . $exc->getMessage());
 			return false;
 		}
 
@@ -143,6 +145,7 @@ class S3 extends DataSource {
 					'ACL' => CannedAcl::PUBLIC_READ,
 				));
 		} catch (Exception $e) {
+			CakeLog::error('AWS S3 [copyObject]: ' . $exc->getMessage());
 			return false;
 		}
 		
