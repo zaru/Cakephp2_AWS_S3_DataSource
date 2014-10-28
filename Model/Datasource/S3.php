@@ -5,6 +5,7 @@
  */
 use Aws\S3\Enum\CannedAcl;
 use Aws\S3\S3Client;
+use Aws\Common\Enum\Region;
 use Aws\S3\Exception\S3Exception;
 use Guzzle\Http\EntityBody;
 
@@ -15,9 +16,11 @@ class S3 extends DataSource {
 	public $description = 'AmazonWebServices S3 File Controller';
 	public $S3 = '';
 	public $bucketName = '';
+	public $region = Region::AP_NORTHEAST_1;
 	
 	public function __construct($config = array(), $autoConnect = true){
 		parent::__construct($config);
+		$config['region'] = $this->region;
 		$this->S3 = S3Client::factory($config);
 		$this->bucketName = $config['bucket_name'];
 	}
