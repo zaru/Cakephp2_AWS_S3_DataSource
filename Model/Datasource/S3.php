@@ -70,6 +70,34 @@ class S3 extends DataSource {
 	}
 
 /**
+ * AWS S3からファイルを取得する
+ *
+ * @param string $filePath S3上のファイル
+ * @return mixed
+ */
+	protected function getFile($filePath) {
+		
+		// 行頭にスラッシュが入っていた場合は消す
+		$filePath = preg_replace("/^\/(.+)$/", "$1", $filePath);
+
+		try {
+			$result = $this->S3->getObject(array(
+					'Bucket' => $this->bucketName,
+					'Key' => $filePath
+				));
+		} catch (S3Exception $exc) {
+			CakeLog::error('AWS S3 [getObject]: ' . $exc->getMessage());
+			return false;
+		}
+
+		if (isset($result)) {
+			return $result;
+		}
+
+		return false;
+	}
+
+/**
  * AWS S3へファイルを削除する
  *
  * @param string $filePath 削除対象のファイル
@@ -167,6 +195,11 @@ class S3 extends DataSource {
 			case 'putFile':
 				if (isset($query['0']) && isset($query['1'])) {
 					return $this->putFile($query['0'], $query['1']);
+				}
+				break;
+			case 'getFile':
+				if (isset($query['0'])) {
+					return $this->getFile($query['0']);
 				}
 				break;
 			case 'deleteFile':
