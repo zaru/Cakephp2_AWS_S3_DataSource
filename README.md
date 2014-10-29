@@ -70,6 +70,8 @@ app/Config/database.phpに
 			
 			// コピー
 			$result = $this->Amazon->copyFile('/img/cake.power.gif', '/img/cake.power2.gif');
+            // 取得
+			$result = $this->Amazon->getFile('/img/cake.power.gif');
 			
 		}
 	}
